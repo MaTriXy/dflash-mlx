@@ -118,7 +118,6 @@ Models without a draft in the registry automatically fall back to standard autor
 ## Roadmap
 
 - Sustained acceptance at 4096+ tokens — draft KV cache window scaling and long-context verify optimization
-- Full-attention model support (Qwen3, LLaMA) with optimized verify path
 - Draft model distillation and compression for faster draft forward
 
 ## Citation
