@@ -9,14 +9,16 @@ from typing import Optional
 import mlx.core as mx
 
 
-def _make_gated_delta_kernel_with_tape(*, has_mask: bool = False, vectorized: bool = False):
+def _make_gated_delta_kernel_with_tape(
+    *, has_mask: bool = False, vectorized: bool = False
+):
     if not mx.metal.is_available():
         return None
 
     mask_load = (
         "float mask_gate = static_cast<float>(mask[b_idx * T + t]);"
-        if has_mask else
-        "constexpr float mask_gate = 1.0f;"
+        if has_mask
+        else "constexpr float mask_gate = 1.0f;"
     )
 
     if vectorized:
@@ -129,10 +131,18 @@ def _make_gated_delta_kernel_with_tape(*, has_mask: bool = False, vectorized: bo
     )
 
 
-_gated_delta_tape_kernel = _make_gated_delta_kernel_with_tape(has_mask=False, vectorized=False)
-_gated_delta_tape_kernel_masked = _make_gated_delta_kernel_with_tape(has_mask=True, vectorized=False)
-_gated_delta_tape_kernel_vec = _make_gated_delta_kernel_with_tape(has_mask=False, vectorized=True)
-_gated_delta_tape_kernel_vec_masked = _make_gated_delta_kernel_with_tape(has_mask=True, vectorized=True)
+_gated_delta_tape_kernel = _make_gated_delta_kernel_with_tape(
+    has_mask=False, vectorized=False
+)
+_gated_delta_tape_kernel_masked = _make_gated_delta_kernel_with_tape(
+    has_mask=True, vectorized=False
+)
+_gated_delta_tape_kernel_vec = _make_gated_delta_kernel_with_tape(
+    has_mask=False, vectorized=True
+)
+_gated_delta_tape_kernel_vec_masked = _make_gated_delta_kernel_with_tape(
+    has_mask=True, vectorized=True
+)
 
 
 def _gated_delta_ops_with_tape(
@@ -237,8 +247,8 @@ def _make_tape_replay_kernel(*, has_mask: bool = False, vectorized: bool = False
 
     mask_load = (
         "float mask_gate = static_cast<float>(mask[b_idx * T + t]);"
-        if has_mask else
-        "constexpr float mask_gate = 1.0f;"
+        if has_mask
+        else "constexpr float mask_gate = 1.0f;"
     )
 
     if vectorized:
@@ -320,15 +330,9 @@ def _make_tape_replay_kernel(*, has_mask: bool = False, vectorized: bool = False
     )
 
 
-_tape_replay_kernel = _make_tape_replay_kernel(
-    has_mask=False, vectorized=False
-)
-_tape_replay_kernel_masked = _make_tape_replay_kernel(
-    has_mask=True, vectorized=False
-)
-_tape_replay_kernel_vec = _make_tape_replay_kernel(
-    has_mask=False, vectorized=True
-)
+_tape_replay_kernel = _make_tape_replay_kernel(has_mask=False, vectorized=False)
+_tape_replay_kernel_masked = _make_tape_replay_kernel(has_mask=True, vectorized=False)
+_tape_replay_kernel_vec = _make_tape_replay_kernel(has_mask=False, vectorized=True)
 _tape_replay_kernel_vec_masked = _make_tape_replay_kernel(
     has_mask=True, vectorized=True
 )
@@ -416,7 +420,9 @@ def tape_replay_kernel(
     return state_out
 
 
-def _compute_sdpa_2pass_blocks(gqa_factor: int, n_kv: int, device_arch: Optional[str] = None) -> int:
+def _compute_sdpa_2pass_blocks(
+    gqa_factor: int, n_kv: int, device_arch: Optional[str] = None
+) -> int:
     arch = device_arch or str(mx.device_info().get("architecture", ""))
     devc = arch[-1] if arch else ""
     n_simds = int(gqa_factor)  # Match AR qL=1 dispatch heuristic.
@@ -454,13 +460,14 @@ def _make_batched_sdpa_2pass_partials_kernel(*, has_mask: bool = False):
 
     mask_setup = (
         "auto mask_ = mask + (((b_idx * Hq + q_head_idx) * M_FIXED + q_seq_idx) * N + block_idx);"
-        if has_mask else ""
+        if has_mask
+        else ""
     )
     # Branchless mask: float gate fused into score; non-masked path is compile-time constant.
     mask_gate = (
         "float mask_gate = static_cast<float>(mask_[0]); use_key = use_key & (mask_gate > Limits<InT>::finite_min);"
-        if has_mask else
-        "constexpr float mask_gate = 0.0f; (void)mask_gate;"
+        if has_mask
+        else "constexpr float mask_gate = 0.0f; (void)mask_gate;"
     )
     mask_score = "score += mask_gate;" if has_mask else ""
     mask_advance = "mask_ += blocks;" if has_mask else ""
@@ -659,7 +666,6 @@ _batched_sdpa_2pass_partials_kernel_masked = _make_batched_sdpa_2pass_partials_k
     has_mask=True
 )
 _batched_sdpa_2pass_reduce_kernel = _make_batched_sdpa_2pass_reduce_kernel()
-
 
 
 def batched_sdpa_2pass_exact(
